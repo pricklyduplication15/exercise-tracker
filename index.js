@@ -29,11 +29,11 @@ app.post("/api/users", async (req, res) => {
 
   try {
     const { nanoid } = await import("nanoid");
-    const id = nanoid(24);
-    const newUser = { username, id, exerciseLog: [], count: 0 }; // Add count property initialized to 0
+    const _id = nanoid(24);
+    const newUser = { username, _id, exerciseLog: [] }; // No need to initialize count here
     users.push(newUser); // Add new user to the users array
     console.log("POST /api/users - New user added:", newUser); // Log the new user added
-    return res.json({ username, _id: id });
+    return res.json({ username, _id });
   } catch (error) {
     console.error(error);
     return res.status(500).send("Error generating short User");
@@ -41,11 +41,11 @@ app.post("/api/users", async (req, res) => {
 });
 
 // Endpoint to add an exercise to a user
-app.post("/api/users/:id/exercises", (req, res) => {
-  const userId = req.params.id;
+app.post("/api/users/:_id/exercises", (req, res) => {
+  const userId = req.params._id;
   const { description, duration, date } = req.body;
 
-  const user = users.find((user) => user.id === userId);
+  const user = users.find((user) => user._id === userId);
 
   if (!user) {
     return res.status(404).send("User not found");
@@ -58,14 +58,13 @@ app.post("/api/users/:id/exercises", (req, res) => {
   };
 
   user.exerciseLog.push(exercise);
-  user.count = user.exerciseLog.length; // Update the count property
-  console.log(`User ${user.username} now has ${user.count} exercises`); // Log the updated count
 
   return res.json({
     username: user.username,
-    count: user.count,
-    _id: user.id,
-    log: user.exerciseLog, // Return the entire exercise log
+    description: exercise.description,
+    duration: exercise.duration,
+    date: exercise.date,
+    _id: user._id,
   });
 });
 
@@ -73,7 +72,7 @@ app.get("/api/users/:_id/logs", (req, res) => {
   const userId = req.params._id;
   const { from, to, limit } = req.query;
 
-  const user = users.find((user) => user.id === userId);
+  const user = users.find((user) => user._id === userId);
 
   if (!user) {
     return res.status(404).send("User not found");
@@ -98,14 +97,14 @@ app.get("/api/users/:_id/logs", (req, res) => {
   return res.json({
     username: user.username,
     count: logs.length,
-    _id: user.id,
+    _id: user._id,
     log: logs,
   });
 });
 
 app.get("/api/users", (req, res) => {
   console.log("GET /api/users - users:", users); // Log the current users array
-  res.json(users);
+  res.json(users.map((user) => ({ username: user.username, _id: user._id })));
 });
 
 const listener = app.listen(process.env.PORT || 3000, () => {
